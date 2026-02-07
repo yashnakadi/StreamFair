@@ -67,3 +67,21 @@ export interface SessionResponse {
   started_at: string;
   ended_at: string | null;
 }
+
+// Transaction history entry (from GET /api/sessions/history)
+export interface TransactionHistoryEntry {
+  session_id: string;
+  video_id: string;
+  status: string;
+  price_quoted: number;
+  price_final: number | null;
+  seconds_watched: number;
+  amount_streamed: number;
+  started_at: string;
+  ended_at: string | null;
+  video_title: string;
+  channel: string;
+  duration_seconds: number;
+  payment_count: number;
+  total_paid_cents: number;
+}

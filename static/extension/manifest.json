@@ -11,7 +11,7 @@
     "https://www.youtube.com/*",
     "https://www.primevideo.com/*",
     "https://www.amazon.com/*",
-    "http://localhost:3000/*"
+    "http://localhost:4000/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js",
@@ -30,6 +30,7 @@
   ],
   "action": {
     "default_title": "StreamPay",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

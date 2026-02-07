@@ -9,5 +9,8 @@
   "scripts": {
     "dev:backend": "npm run dev --workspace=backend",
     "build:extension": "npm run build --workspace=extension"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2"
   }
 }

@@ -1,4 +1,4 @@
-export const API_BASE = 'http://localhost:3000/api';
+export const API_BASE = 'http://localhost:4000/api';
 
 export const HEARTBEAT_INTERVAL_MS = 5_000;
 export const METER_TICK_MS = 1_000;

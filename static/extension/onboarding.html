@@ -390,14 +390,34 @@
     <div class="logo">// StreamPay</div>
 
     <!-- ═══════════════════════════════════════════════════════════
-         SCREEN 1: Import Wallet
+         SCREEN 1: Choice — Import or Generate
          ═══════════════════════════════════════════════════════════ -->
     <div class="screen active" id="screen-welcome">
       <h1>Welcome to StreamPay</h1>
       <p class="subtitle">
         Pay-per-view micro-payments powered by XRPL.<br>
-        Import your wallet to get started.
+        Choose how to set up your wallet.
       </p>
+
+      <div class="choices">
+        <div class="choice-card" id="choice-import">
+          <div class="icon">&#128273;</div>
+          <h3>Import Wallet</h3>
+          <p>Already have an XRPL wallet? Enter your seed to get started.</p>
+        </div>
+        <div class="choice-card" id="choice-generate">
+          <div class="icon">&#9889;</div>
+          <h3>Generate Wallet</h3>
+          <p>Create a new testnet wallet funded with XRP automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 2a: Import Wallet
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-import">
+      <h2>Import Wallet</h2>
 
       <div class="card">
         <div class="input-group">
@@ -414,7 +434,59 @@
 
       <div class="error-msg" id="import-error"></div>
 
-      <button class="btn btn-primary btn-block" id="btn-import-submit">Import Wallet &rarr;</button>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-import-back">&larr; Back</button>
+        <button class="btn btn-primary" id="btn-import-submit">Import Wallet &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 2b: Generate Wallet
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-generate">
+      <h2>Your New Wallet</h2>
+
+      <div class="warning">
+        Save your seed phrase securely. You cannot recover it later.
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <div class="field-label">Address</div>
+          <div class="field-value">
+            <span class="text" id="gen-address">&mdash;</span>
+            <button class="copy-btn" id="btn-copy-address">Copy</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">Seed</div>
+          <div class="field-value">
+            <span class="text" id="gen-seed" style="-webkit-text-security: disc;">&mdash;</span>
+            <button class="btn btn-sm btn-ghost" id="btn-toggle-gen-vis">Show</button>
+            <button class="copy-btn" id="btn-copy-seed">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <details>
+        <summary>How to get RLUSD for testing</summary>
+        <div class="details-body">
+          <ol class="steps-list">
+            <li>Download the <a href="https://crossmark.io" target="_blank">Crossmark wallet</a> browser extension</li>
+            <li>Import this seed into Crossmark (select <strong>Testnet</strong>)</li>
+            <li>Go to <a href="https://tryrlusd.com" target="_blank">tryrlusd.com</a> and connect Crossmark</li>
+            <li>Click <strong>"Enable Trustline"</strong> in the Crossmark popup</li>
+            <li>Claim RLUSD tokens from tryrlusd.com</li>
+          </ol>
+        </div>
+      </details>
+
+      <div class="error-msg" id="generate-error"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-generate-back">&larr; Back</button>
+        <button class="btn btn-primary" id="btn-seed-saved">I've Saved My Seed &rarr;</button>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════

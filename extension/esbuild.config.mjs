@@ -9,6 +9,7 @@ const buildOptions = {
     'src/background/service-worker.ts',
     'src/content/main.ts',
     'src/onboarding/onboarding.ts',
+    'src/popup/popup.ts',
   ],
   bundle: true,
   outdir: 'dist',
@@ -33,6 +34,11 @@ function copyStatic() {
   // Copy onboarding.html
   if (fs.existsSync(path.join(staticDir, 'onboarding.html'))) {
     fs.copyFileSync(path.join(staticDir, 'onboarding.html'), path.join(distDir, 'onboarding.html'));
+  }
+
+  // Copy popup.html
+  if (fs.existsSync(path.join(staticDir, 'popup.html'))) {
+    fs.copyFileSync(path.join(staticDir, 'popup.html'), path.join(distDir, 'popup.html'));
   }
 
   // Copy icons directory

@@ -73,3 +73,28 @@ export function declineSession(installId: string, videoId: string, priceQuoted: 
 export function listSessions(limit = 100): WatchSession[] {
   return getDb().prepare('SELECT * FROM watch_sessions ORDER BY started_at DESC LIMIT ?').all(limit) as WatchSession[];
 }
+
+export function listSessionsByInstallId(installId: string, limit = 50): any[] {
+  return getDb().prepare(`
+    SELECT
+      s.session_id,
+      s.video_id,
+      s.status,
+      s.price_quoted,
+      s.price_final,
+      s.seconds_watched,
+      s.amount_streamed,
+      s.started_at,
+      s.ended_at,
+      COALESCE(v.title, s.video_id) AS video_title,
+      COALESCE(v.channel, '') AS channel,
+      COALESCE(v.duration_seconds, 0) AS duration_seconds,
+      (SELECT COUNT(*) FROM payment_ledger p WHERE p.session_id = s.session_id) AS payment_count,
+      (SELECT COALESCE(SUM(p.amount_cents), 0) FROM payment_ledger p WHERE p.session_id = s.session_id) AS total_paid_cents
+    FROM watch_sessions s
+    LEFT JOIN videos v ON v.video_id = s.video_id
+    WHERE s.install_id = ?
+    ORDER BY s.started_at DESC
+    LIMIT ?
+  `).all(installId, limit);
+}

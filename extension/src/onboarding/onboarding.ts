@@ -3,7 +3,7 @@
    Multi-step guided wallet setup wizard
    ────────────────────────────────────────────────────────────── */
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'http://localhost:4000/api';
 
 // ── State ─────────────────────────────────────────────────────
 let walletAddress = '';
@@ -13,8 +13,10 @@ let walletSeed = '';
 const $ = (id: string) => document.getElementById(id)!;
 
 const screens: Record<string, HTMLElement> = {
-  welcome: $('screen-welcome'),
-  ready:   $('screen-ready'),
+  welcome:  $('screen-welcome'),
+  import:   $('screen-import'),
+  generate: $('screen-generate'),
+  ready:    $('screen-ready'),
 };
 
 const loadingOverlay = $('loading-overlay');
@@ -94,7 +96,13 @@ async function storeWallet(address: string, seed: string) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  SCREEN 1 — Import wallet
+//  SCREEN 1 — Choice
+// ═══════════════════════════════════════════════════════════════
+$('choice-import').addEventListener('click', () => showScreen('import'));
+$('choice-generate').addEventListener('click', generateWallet);
+
+// ═══════════════════════════════════════════════════════════════
+//  SCREEN 2a — Import wallet
 // ═══════════════════════════════════════════════════════════════
 $('btn-toggle-import-vis').addEventListener('click', () => {
   const input = $('import-seed-input') as HTMLInputElement;
@@ -113,9 +121,37 @@ $('import-seed-input').addEventListener('keydown', (e) => {
 });
 
 $('btn-import-submit').addEventListener('click', importWallet);
+$('btn-import-back').addEventListener('click', () => showScreen('welcome'));
 
 // ═══════════════════════════════════════════════════════════════
-//  SCREEN 2 — Ready
+//  SCREEN 2b — Generate wallet
+// ═══════════════════════════════════════════════════════════════
+$('btn-toggle-gen-vis').addEventListener('click', () => {
+  const seedEl = $('gen-seed');
+  const btn = $('btn-toggle-gen-vis');
+  const style = seedEl.style as any;
+  if (style.webkitTextSecurity === 'disc') {
+    style.webkitTextSecurity = 'none';
+    btn.textContent = 'Hide';
+  } else {
+    style.webkitTextSecurity = 'disc';
+    btn.textContent = 'Show';
+  }
+});
+
+$('btn-copy-address').addEventListener('click', () => {
+  copyToClipboard(walletAddress, $('btn-copy-address'));
+});
+
+$('btn-copy-seed').addEventListener('click', () => {
+  copyToClipboard(walletSeed, $('btn-copy-seed'));
+});
+
+$('btn-seed-saved').addEventListener('click', finishGenerate);
+$('btn-generate-back').addEventListener('click', () => showScreen('welcome'));
+
+// ═══════════════════════════════════════════════════════════════
+//  SCREEN 3 — Ready
 // ═══════════════════════════════════════════════════════════════
 $('btn-start-youtube').addEventListener('click', () => {
   window.location.href = 'https://www.youtube.com';
@@ -153,6 +189,41 @@ async function importWallet() {
   }
 }
 
+async function generateWallet() {
+  showLoading('Creating testnet wallet\u2026');
+  try {
+    const data = await api('/onboarding/create-wallet', 'POST');
+    walletAddress = data.address;
+    walletSeed = data.seed;
+
+    $('gen-address').textContent = walletAddress;
+    $('gen-seed').textContent = walletSeed;
+
+    hideLoading();
+    showScreen('generate');
+  } catch (err: any) {
+    hideLoading();
+    showToast(err.message || 'Failed to create wallet. Is the backend running?');
+  }
+}
+
+async function finishGenerate() {
+  hideError('generate-error');
+  showLoading('Checking wallet status\u2026');
+  try {
+    const data = await api('/onboarding/import-wallet', 'POST', { seed: walletSeed });
+    await storeWallet(walletAddress, walletSeed);
+
+    hideLoading();
+    populateReadyScreen(data.xrpBalance, data.rlusdBalance, data.hasTrustline);
+    showScreen('ready');
+    showToast('Wallet created successfully!', 'success');
+  } catch (err: any) {
+    hideLoading();
+    showError('generate-error', err.message || 'Failed to verify wallet.');
+  }
+}
+
 // ── Ready screen ──────────────────────────────────────────────
 
 function populateReadyScreen(xrpBalance: string, rlusdBalance: string, hasTrustline: boolean) {
@@ -184,7 +255,7 @@ async function init() {
     return;
   }
 
-  // No wallet — show import
+  // No wallet — show choice screen
   showScreen('welcome');
 }
 

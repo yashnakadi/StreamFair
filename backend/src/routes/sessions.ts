@@ -4,6 +4,7 @@ import { getVideo } from '../models/video';
 import {
   createSession, getSession, updateSessionTime, updateAmountStreamed,
   endSession, declineSession, recordPayment, getSessionPayments,
+  listSessionsByInstallId,
 } from '../models/session';
 import { insertEvent } from '../models/event';
 import { paymentProvider } from '../services/payment-provider';
@@ -34,6 +35,12 @@ router.post('/sessions/decline', extractInstallId, (req: Request, res: Response)
 
   const session = declineSession(req.installId!, videoId, priceQuoted);
   res.status(201).json(session);
+});
+
+// GET /api/sessions/history — get current user's session + payment history
+router.get('/sessions/history', extractInstallId, (req: Request, res: Response) => {
+  const sessions = listSessionsByInstallId(req.installId!);
+  res.json(sessions);
 });
 
 // POST /api/sessions/:id/events — log a watch event + stream micro-payment on heartbeat
