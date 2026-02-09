@@ -41,7 +41,8 @@
       "Bash(/usr/local/bin/npm --version)",
       "Bash(nodemon:*)",
       "Bash(/usr/local/bin/nodemon:*)",
-      "Bash(PATH=\"/usr/local/bin:$PATH\" /usr/local/bin/npm install:*)"
+      "Bash(PATH=\"/usr/local/bin:$PATH\" /usr/local/bin/npm install:*)",
+      "Bash(git -C /Users/aryanmudgal/Desktop/StreamFair copy log --oneline -20)"
     ]
   }
 }
