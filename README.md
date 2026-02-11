@@ -165,35 +165,23 @@ Open any YouTube or Prime Video page — the pricing gate appears, and payments 
 ## Architecture
 
 ```mermaid
-graph TD
-    subgraph EXT["Chrome Extension — Manifest V3"]
-        CS["Content Script<br/><sub>Gate UI · Watch Meter · Live Badge · Platform Detection</sub>"]
-        SW["Service Worker<br/><sub>CORS Proxy · Wallet Management · Badge Control</sub>"]
-        POP["Popup<br/><sub>Transaction History · Total Spent · Session List</sub>"]
-        OB["Onboarding<br/><sub>Wallet Setup Wizard</sub>"]
+flowchart TB
+    subgraph ext [" Extension — Chrome Manifest V3 "]
+        direction LR
+        CS[Content Script] & POP[Popup] & OB[Onboarding] --> SW[Service Worker]
     end
 
-    subgraph BACK["Backend — Express + TypeScript"]
-        ROUTES["Routes<br/><sub>/price · /sessions · /xrpl · /onboard · /admin</sub>"]
-        SERVICES["Services<br/><sub>Pricing Engine · XRPL Payment Provider</sub>"]
-        DB["SQLite<br/><sub>WAL Mode · Videos · Sessions · Events · Ledger</sub>"]
+    subgraph back [" Backend — Express + TypeScript "]
+        direction LR
+        ROUTES[API Routes] --> SVC[Services] & DB[(SQLite)]
     end
 
-    subgraph CHAIN["XRP Ledger — Testnet"]
-        RLUSD["RLUSD Payments<br/><sub>Viewer → Creator · 3–5s settlement · ~0.00001 XRP fee</sub>"]
+    subgraph chain [" XRP Ledger — Testnet "]
+        RLUSD[RLUSD Settlement]
     end
 
-    CS -- "messages" --> SW
-    POP -- "messages" --> SW
-    OB -- "messages" --> SW
-    SW -- "REST API" --> ROUTES
-    ROUTES --> SERVICES
-    ROUTES --> DB
-    SERVICES -- "WebSocket" --> RLUSD
-
-    style EXT fill:#12122a,stroke:#1f7cff,color:#e0e0f0
-    style BACK fill:#12122a,stroke:#22cc88,color:#e0e0f0
-    style CHAIN fill:#12122a,stroke:#25A768,color:#e0e0f0
+    SW -- " REST API " --> ROUTES
+    SVC -- " WebSocket " --> RLUSD
 ```
 
 ### Components
