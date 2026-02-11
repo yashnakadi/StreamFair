@@ -76,32 +76,28 @@ Every transaction is settled on-chain with a permanent, verifiable `tx_hash`.
 
 ### Payment Flow
 
-```
- Viewer opens video
-       │
-       ▼
- ┌─────────────────────┐
- │    Pricing Gate       │  Extension fetches price from backend
- │    $0.24 for 2:00     │  (base rate x community watch ratio)
- │                       │
- │  [ Start ] [ Decline ]│
- └──────────┬────────────┘
-            │
-            ▼
- ┌──────────────────────────────────────────────┐
- │                Active Session                 │
- │                                               │
- │  Every 1s   accumulate watch time             │
- │  Every 5s   heartbeat → backend ──────────────┼──→ XRPL Payment (RLUSD)
- │                                               │    tx_hash recorded
- │  Badge shows live cost: [ $0.04 ]             │
- └──────────────────┬────────────────────────────┘
-                    │
-                    ▼
- ┌──────────────────────────┐
- │     Session Complete      │  Remaining balance settled
- │     Total: $0.18 / 1:32  │  Session marked 'completed'
- └──────────────────────────┘
+```mermaid
+flowchart TD
+    A(Viewer opens a video) --> B(Extension fetches price from backend)
+    B --> C{Pricing Gate<br/><b>$0.24 for 2:00</b>}
+    C -- Start Watching --> D(Active Session)
+    C -- Decline --> E(Session logged & skipped)
+
+    D --> F(Every 1s — accumulate watch time)
+    D --> G(Every 5s — heartbeat sent to backend)
+    G --> H(Backend calculates prorated delta)
+    H --> I(XRPL Payment — RLUSD)
+    I --> J(tx_hash recorded on-chain)
+    J --> K(Badge updates live cost)
+
+    D --> L(Video ends or viewer stops)
+    L --> M(Final settlement sent via XRPL)
+    M --> N(Session complete — total paid)
+
+    style C fill:#1f7cff,color:#fff,stroke:#1f7cff
+    style I fill:#25A768,color:#fff,stroke:#25A768
+    style M fill:#25A768,color:#fff,stroke:#25A768
+    style E fill:#333,color:#aaa,stroke:#555
 ```
 
 ### Pricing Formula
@@ -110,8 +106,10 @@ Every transaction is settled on-chain with a permanent, verifiable `tx_hash`.
 totalPrice = basePrice × (avgWatchRatio / 100)
 ```
 
-- **basePrice** = `0.2 cents/second × duration` (or admin override)
-- **avgWatchRatio** = average % of the video watched across all viewers
+| Parameter | Definition |
+|:--|:--|
+| **basePrice** | `0.2 cents/second × duration` (or admin override) |
+| **avgWatchRatio** | Average % of the video watched across all viewers (0–100) |
 
 A 10-minute video with a 60% community watch ratio costs 60% of the base price. Content people finish costs more. Content people abandon costs less.
 
@@ -166,48 +164,36 @@ Open any YouTube or Prime Video page — the pricing gate appears, and payments 
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                   Chrome Extension (MV3)                  │
-│                                                          │
-│  ┌──────────────┐  ┌─────────────┐  ┌─────────────────┐ │
-│  │Content Script │  │  Service    │  │  Popup          │ │
-│  │              │  │  Worker     │  │  (History UI)   │ │
-│  │ Gate UI      │  │             │  │                 │ │
-│  │ Watch Meter  │  │ CORS Proxy  │  │ Tx history      │ │
-│  │ Live Badge   │  │ Wallet Mgmt │  │ Total spent     │ │
-│  │ Platform     │  │ Badge Ctrl  │  │ Session list    │ │
-│  │  Detection   │  │             │  │                 │ │
-│  └──────┬───────┘  └──────┬──────┘  └─────────────────┘ │
-│         │                 │                               │
-└─────────┼─────────────────┼───────────────────────────────┘
-          │    REST API     │
-          └────────┬────────┘
-                   │
-     ┌─────────────▼──────────────────────────┐
-     │       Backend (Express + TypeScript)    │
-     │                                         │
-     │  Routes          Services     Database  │
-     │  ┌───────────┐  ┌──────────┐  ┌──────┐ │
-     │  │ /price    │  │ Pricing  │  │SQLite│ │
-     │  │ /sessions │  │ Engine   │  │      │ │
-     │  │ /xrpl     │  │          │  │ WAL  │ │
-     │  │ /onboard  │  │ XRPL     │  │ mode │ │
-     │  │ /admin    │  │ Payment  │  │      │ │
-     │  └───────────┘  └────┬─────┘  └──────┘ │
-     │                      │                  │
-     └──────────────────────┼──────────────────┘
-                            │ WebSocket
-                            │
-               ┌────────────▼──────────────┐
-               │    XRP Ledger (Testnet)    │
-               │                           │
-               │   RLUSD Token Payments    │
-               │   Viewer ────→ Creator    │
-               │                           │
-               │   Settlement: 3–5 sec     │
-               │   Fee: ~0.00001 XRP       │
-               └───────────────────────────┘
+```mermaid
+graph TD
+    subgraph EXT["Chrome Extension — Manifest V3"]
+        CS["Content Script<br/><sub>Gate UI · Watch Meter · Live Badge · Platform Detection</sub>"]
+        SW["Service Worker<br/><sub>CORS Proxy · Wallet Management · Badge Control</sub>"]
+        POP["Popup<br/><sub>Transaction History · Total Spent · Session List</sub>"]
+        OB["Onboarding<br/><sub>Wallet Setup Wizard</sub>"]
+    end
+
+    subgraph BACK["Backend — Express + TypeScript"]
+        ROUTES["Routes<br/><sub>/price · /sessions · /xrpl · /onboard · /admin</sub>"]
+        SERVICES["Services<br/><sub>Pricing Engine · XRPL Payment Provider</sub>"]
+        DB["SQLite<br/><sub>WAL Mode · Videos · Sessions · Events · Ledger</sub>"]
+    end
+
+    subgraph CHAIN["XRP Ledger — Testnet"]
+        RLUSD["RLUSD Payments<br/><sub>Viewer → Creator · 3–5s settlement · ~0.00001 XRP fee</sub>"]
+    end
+
+    CS -- "messages" --> SW
+    POP -- "messages" --> SW
+    OB -- "messages" --> SW
+    SW -- "REST API" --> ROUTES
+    ROUTES --> SERVICES
+    ROUTES --> DB
+    SERVICES -- "WebSocket" --> RLUSD
+
+    style EXT fill:#12122a,stroke:#1f7cff,color:#e0e0f0
+    style BACK fill:#12122a,stroke:#22cc88,color:#e0e0f0
+    style CHAIN fill:#12122a,stroke:#25A768,color:#e0e0f0
 ```
 
 ### Components
@@ -223,9 +209,7 @@ Open any YouTube or Prime Video page — the pricing gate appears, and payments 
 | Payment Provider | xrpl.js v4 | XRPL connection, transaction signing + submission |
 | Database | SQLite (better-sqlite3) | Videos, sessions, events, payment ledger |
 
-### Platform Abstraction
-
-The extension uses a unified interface to support multiple streaming platforms:
+### Platform Support
 
 | Platform | Video ID Source | Navigation Detection |
 |:--|:--|:--|
@@ -234,7 +218,7 @@ The extension uses a unified interface to support multiple streaming platforms:
 
 ---
 
-## On-Chain Payment Flow
+## On-Chain Settlement
 
 ```mermaid
 sequenceDiagram
@@ -242,33 +226,34 @@ sequenceDiagram
     participant API as Backend
     participant XRPL as XRP Ledger
 
-    Ext->>API: POST /sessions (start watching)
+    Ext->>API: POST /sessions
     API-->>Ext: session_id
 
+    rect rgb(18, 18, 42)
+    note right of Ext: Streaming loop
     loop Every 5 seconds
-        Ext->>API: POST /sessions/:id/events {heartbeat}
+        Ext->>API: POST /sessions/:id/events
         API->>API: Calculate prorated delta
-        API->>XRPL: Payment tx (RLUSD)
-        XRPL-->>API: tx_hash (3–5s settlement)
-        API->>API: Record in payment_ledger
-        API-->>Ext: { payment: { amount, tx_hash } }
-        Ext->>Ext: Update badge [$0.04]
+        API->>XRPL: RLUSD payment tx
+        XRPL-->>API: tx_hash (3–5s)
+        API-->>Ext: { amount, tx_hash }
+    end
     end
 
     Ext->>API: POST /sessions/:id/end
     API->>XRPL: Final settlement
     XRPL-->>API: tx_hash
-    API-->>Ext: { session: completed, totalPaid }
+    API-->>Ext: { completed, totalPaid }
 ```
 
-Each XRPL transaction includes:
+**Each on-chain transaction contains:**
 
-| Field | Example |
+| Field | Value |
 |:--|:--|
-| Amount | `0.040000` RLUSD |
-| Destination | Creator's XRPL address |
-| Memo | Session context (audit trail) |
-| Result | `tesSUCCESS` — on-ledger confirmation |
+| **Amount** | RLUSD (e.g. `0.040000`) |
+| **Destination** | Creator's XRPL address |
+| **Memo** | Session ID for audit trail |
+| **Result** | `tesSUCCESS` — confirmed on-ledger |
 
 ---
 
