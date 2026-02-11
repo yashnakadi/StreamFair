@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamPay Admin</title>
+  <style>
+    :root {
+      --bg: #0a0a1a;
+      --surface: #12122a;
+      --border: #1e1e3a;
+      --text: #e0e0f0;
+      --muted: #8888aa;
+      --accent: #1f7cff;
+      --accent-hover: #4a9aff;
+      --danger: #ff4444;
+      --success: #22cc88;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 20px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 16px;
+      color: var(--muted);
+      margin: 24px 0 12px;
+    }
+    .token-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    input, button {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 4px;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+    button:hover { background: var(--accent-hover); }
+    button.danger { background: var(--danger); border-color: var(--danger); }
+    .status { color: var(--muted); margin: 8px 0; }
+    .status.ok { color: var(--success); }
+    .status.err { color: var(--danger); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    td { font-size: 13px; }
+    tr:hover td { background: var(--surface); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.active { background: #1f7cff33; color: var(--accent); }
+    .badge.completed { background: #22cc8833; color: var(--success); }
+    .badge.declined { background: #ff444433; color: var(--danger); }
+    .override-form {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .override-form input { width: 70px; padding: 4px 6px; }
+    .override-form button { padding: 4px 8px; font-size: 11px; }
+    .section { margin-bottom: 32px; }
+    #video-lookup {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    #video-lookup input { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>// StreamPay Admin</h1>
+
+  <div class="token-bar">
+    <input type="password" id="token" placeholder="Admin token" value="streamfair-dev-token" />
+    <button onclick="loadAll()">Connect</button>
+  </div>
+  <div id="conn-status" class="status"></div>
+
+  <div class="section">
+    <h2>// Video Lookup</h2>
+    <div id="video-lookup">
+      <input type="text" id="video-id-input" placeholder="YouTube Video ID" />
+      <button onclick="lookupVideo()">Lookup</button>
+    </div>
+    <div id="video-detail"></div>
+  </div>
+
+  <div class="section">
+    <h2>// Videos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Video ID</th>
+          <th>Title</th>
+          <th>Duration</th>
+          <th>Avg Ratio</th>
+          <th>Manual Ratio</th>
+          <th>Override Price</th>
+        </tr>
+      </thead>
+      <tbody id="videos-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>// Recent Sessions</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Install</th>
+          <th>Video</th>
+          <th>Status</th>
+          <th>Quoted</th>
+          <th>Final</th>
+          <th>Watched</th>
+          <th>Started</th>
+        </tr>
+      </thead>
+      <tbody id="sessions-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = '';
+    const headers = () => ({
+      'Content-Type': 'application/json',
+      'X-Admin-Token': document.getElementById('token').value,
+    });
+
+    async function loadAll() {
+      const status = document.getElementById('conn-status');
+      try {
+        await loadVideos();
+        await loadSessions();
+        status.textContent = 'Connected';
+        status.className = 'status ok';
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'status err';
+      }
+    }
+
+    async function loadVideos() {
+      const res = await fetch(API + '/api/admin/videos', { headers: headers() });
+      if (!res.ok) throw new Error('Failed to load videos');
+      const videos = await res.json();
+      const body = document.getElementById('videos-body');
+      body.innerHTML = videos.map(v => `
+        <tr>
+          <td>${v.video_id.substring(0, 11)}</td>
+          <td>${esc(v.title).substring(0, 30) || '—'}</td>
+          <td>${formatDuration(v.duration_seconds)}</td>
+          <td>${v.avg_watch_ratio.toFixed(1)}%</td>
+          <td>
+            <div class="override-form">
+              <input type="number" id="mr-${v.video_id}" placeholder="0–100" step="1" min="0" max="100" value="${v.manual_avg_watch_ratio ?? ''}" style="width:80px" />
+              <button onclick="setManualRatio('${v.video_id}')">Set</button>
+              <button class="danger" onclick="clearManualRatio('${v.video_id}')">×</button>
+            </div>
+          </td>
+          <td>
+            <div class="override-form">
+              <input type="number" id="ov-${v.video_id}" placeholder="¢" value="${v.override_price ?? ''}" />
+              <button onclick="setOverride('${v.video_id}')">Set</button>
+              <button class="danger" onclick="clearOverride('${v.video_id}')">×</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadSessions() {
+      const res = await fetch(API + '/api/admin/sessions', { headers: headers() });
+      if (!res.ok) throw new Error('Failed to load sessions');
+      const sessions = await res.json();
+      const body = document.getElementById('sessions-body');
+      body.innerHTML = sessions.map(s => `
+        <tr>
+          <td>${s.session_id.substring(0, 8)}</td>
+          <td>${s.install_id.substring(0, 8)}</td>
+          <td>${s.video_id.substring(0, 11)}</td>
+          <td><span class="badge ${s.status}">${s.status}</span></td>
+          <td>${s.price_quoted}¢</td>
+          <td>${s.price_final !== null ? s.price_final + '¢' : '—'}</td>
+          <td>${s.seconds_watched}s</td>
+          <td>${s.started_at}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function setOverride(videoId) {
+      const input = document.getElementById('ov-' + videoId);
+      const val = parseFloat(input.value);
+      if (isNaN(val)) return alert('Enter a numeric price in cents');
+      await fetch(API + '/api/admin/videos/' + videoId + '/override', {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ overridePrice: val }),
+      });
+      loadVideos();
+    }
+
+    async function clearOverride(videoId) {
+      await fetch(API + '/api/admin/videos/' + videoId + '/override', {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ overridePrice: null }),
+      });
+      loadVideos();
+    }
+
+    async function setManualRatio(videoId) {
+      const input = document.getElementById('mr-' + videoId);
+      const val = parseFloat(input.value);
+      if (isNaN(val) || val < 0 || val > 100) return alert('Enter a percentage between 0 and 100');
+      await fetch(API + '/api/admin/videos/' + videoId + '/ratio', {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ manualAvgWatchRatio: val }),
+      });
+      loadVideos();
+    }
+
+    async function clearManualRatio(videoId) {
+      await fetch(API + '/api/admin/videos/' + videoId + '/ratio', {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify({ manualAvgWatchRatio: null }),
+      });
+      loadVideos();
+    }
+
+    async function lookupVideo() {
+      const id = document.getElementById('video-id-input').value.trim();
+      if (!id) return;
+      const res = await fetch(API + '/api/videos/' + id + '/price');
+      if (!res.ok) { document.getElementById('video-detail').textContent = 'Not found'; return; }
+      const data = await res.json();
+      document.getElementById('video-detail').innerHTML = `
+        <table>
+          <tr><td>Video ID</td><td>${data.videoId}</td></tr>
+          <tr><td>Price</td><td>${data.priceCents}¢</td></tr>
+          <tr><td>Avg Watch Ratio</td><td>${data.avgWatchRatio.toFixed(1)}%</td></tr>
+          <tr><td>Manual Seed</td><td>${data.manualAvgWatchRatio !== null ? data.manualAvgWatchRatio.toFixed(1) + '%' : 'None (using computed)'}</td></tr>
+          <tr><td>Override Price</td><td>${data.overridePrice !== null ? data.overridePrice + '¢' : 'None'}</td></tr>
+          <tr><td>Duration</td><td>${formatDuration(data.durationSeconds)}</td></tr>
+        </table>
+      `;
+    }
+
+    function formatDuration(s) {
+      if (!s) return '—';
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return m + ':' + String(sec).padStart(2, '0');
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

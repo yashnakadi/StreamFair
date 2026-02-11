@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamPay — Setup</title>
+  <style>
+    /* ── Reset ─────────────────────────────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      background: #0a0a1a;
+      color: #e0e0f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 540px;
+      width: 100%;
+    }
+
+    .logo {
+      font-size: 13px;
+      color: #8888aa;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 36px;
+      text-align: center;
+    }
+
+    /* ── Screens ───────────────────────────────────────────────── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+      animation: fadeIn 0.25s ease;
+    }
+    .screen.active { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Typography ────────────────────────────────────────────── */
+    h1 { font-size: 24px; font-weight: 700; text-align: center; }
+    h2 { font-size: 18px; font-weight: 600; }
+    h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+
+    .subtitle {
+      font-size: 13px;
+      color: #8888aa;
+      text-align: center;
+      line-height: 1.7;
+    }
+    .subtitle strong { color: #cccce0; }
+
+    /* ── Choice cards (welcome screen) ─────────────────────────── */
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .choice-card {
+      background: #12122a;
+      border: 1px solid #1e1e3a;
+      border-radius: 12px;
+      padding: 28px 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+    .choice-card:hover {
+      border-color: #1f7cff;
+      background: #14142e;
+    }
+    .choice-card .icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+      color: #1f7cff;
+    }
+    .choice-card h3 { margin-bottom: 8px; font-size: 14px; }
+    .choice-card p { font-size: 11px; color: #8888aa; line-height: 1.4; }
+
+    /* ── Generic card ──────────────────────────────────────────── */
+    .card {
+      background: #12122a;
+      border: 1px solid #1e1e3a;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    /* ── Form elements ─────────────────────────────────────────── */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .input-group label {
+      font-size: 11px;
+      color: #8888aa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"],
+    input[type="password"] {
+      flex: 1;
+      background: #0d0d22;
+      border: 1px solid #1e1e3a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #e0e0f0;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: #1f7cff; }
+    input::placeholder { color: #444466; }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary { background: #1f7cff; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #4a9aff; }
+
+    .btn-secondary { background: #1e1e3a; color: #e0e0f0; }
+    .btn-secondary:hover:not(:disabled) { background: #2a2a4a; }
+
+    .btn-ghost { background: transparent; color: #8888aa; border-color: #1e1e3a; }
+    .btn-ghost:hover:not(:disabled) { border-color: #1f7cff; color: #1f7cff; }
+
+    .btn-sm { font-size: 11px; padding: 6px 12px; }
+    .btn-block { width: 100%; }
+
+    .btn-row { display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+
+    /* ── Field display (wallet details) ────────────────────────── */
+    .field { margin-bottom: 20px; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field-label {
+      font-size: 10px;
+      color: #8888aa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .field-value {
+      font-size: 13px;
+      color: #e0e0f0;
+      word-break: break-all;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .field-value .text { flex: 1; }
+
+    .copy-btn {
+      background: #1e1e3a;
+      border: none;
+      color: #8888aa;
+      font-family: inherit;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: #2a2a4a; color: #e0e0f0; }
+    .copy-btn.copied { background: #22cc88; color: #fff; }
+
+    /* ── Warning / info boxes ──────────────────────────────────── */
+    .warning {
+      background: #1a1a00;
+      border: 1px solid #332200;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 12px;
+      color: #ffaa22;
+      line-height: 1.6;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: #8888aa;
+      line-height: 1.5;
+    }
+
+    /* ── Status badge ──────────────────────────────────────────── */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      width: 100%;
+    }
+    .status-checking { background: #1e1e3a; color: #8888aa; }
+    .status-success  { background: #0a2a1a; color: #22cc88; }
+    .status-error    { background: #2a0a0a; color: #ff6666; }
+    .status-warn     { background: #1a1a00; color: #ffaa22; }
+
+    /* ── Instruction steps ─────────────────────────────────────── */
+    .steps-list {
+      list-style: none;
+      counter-reset: steps;
+    }
+    .steps-list li {
+      counter-increment: steps;
+      position: relative;
+      padding: 12px 0 12px 40px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #cccce0;
+      border-bottom: 1px solid #1a1a2e;
+    }
+    .steps-list li:last-child { border-bottom: none; }
+    .steps-list li::before {
+      content: counter(steps);
+      position: absolute;
+      left: 0;
+      top: 12px;
+      width: 24px;
+      height: 24px;
+      background: #1e1e3a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #1f7cff;
+    }
+    .steps-list code {
+      background: #0d0d22;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 11px;
+      color: #e0e0f0;
+      word-break: break-all;
+    }
+    .steps-list a {
+      color: #1f7cff;
+      text-decoration: none;
+    }
+    .steps-list a:hover { text-decoration: underline; }
+
+    /* ── Collapsible details ───────────────────────────────────── */
+    details {
+      border: 1px solid #1e1e3a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    summary {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #8888aa;
+      background: #0d0d22;
+      user-select: none;
+      font-family: inherit;
+    }
+    summary:hover { color: #e0e0f0; }
+    details[open] summary { border-bottom: 1px solid #1e1e3a; }
+    details .details-body { padding: 16px; }
+
+    /* ── Divider ───────────────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #444466;
+      font-size: 11px;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1e1e3a;
+    }
+
+    /* ── Summary rows (ready screen) ───────────────────────────── */
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #1e1e3a;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { font-size: 12px; color: #8888aa; }
+    .summary-value { font-size: 14px; font-weight: 600; }
+    .green { color: #22cc88; }
+    .blue  { color: #1f7cff; }
+
+    /* ── Error message block ───────────────────────────────────── */
+    .error-msg {
+      background: #2a0a0a;
+      border: 1px solid #441111;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #ff6666;
+      line-height: 1.5;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── Loading overlay ───────────────────────────────────────── */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 26, 0.92);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .loading-overlay.active { display: flex; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #1e1e3a;
+      border-top-color: #1f7cff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-label {
+      font-size: 13px;
+      color: #8888aa;
+    }
+
+    /* ── Toast ──────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      z-index: 200;
+      transition: transform 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.error   { background: #ff4444; color: #fff; }
+    .toast.success { background: #22cc88; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">// StreamPay</div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 1: Choice — Import or Generate
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="screen active" id="screen-welcome">
+      <h1>Welcome to StreamPay</h1>
+      <p class="subtitle">
+        Pay-per-view micro-payments powered by XRPL.<br>
+        Choose how to set up your wallet.
+      </p>
+
+      <div class="choices">
+        <div class="choice-card" id="choice-import">
+          <div class="icon">&#128273;</div>
+          <h3>Import Wallet</h3>
+          <p>Already have an XRPL wallet? Enter your seed to get started.</p>
+        </div>
+        <div class="choice-card" id="choice-generate">
+          <div class="icon">&#9889;</div>
+          <h3>Generate Wallet</h3>
+          <p>Create a new testnet wallet funded with XRP automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 2a: Import Wallet
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-import">
+      <h2>Import Wallet</h2>
+
+      <div class="card">
+        <div class="input-group">
+          <label for="import-seed-input">Enter Your Wallet Seed</label>
+          <div class="input-row">
+            <input type="password" id="import-seed-input" placeholder="sEdxxxxxxxx..." autocomplete="off" spellcheck="false" />
+            <button class="btn btn-sm btn-ghost" id="btn-toggle-import-vis">Show</button>
+          </div>
+        </div>
+        <p class="info-text" style="margin-top: 12px;">
+          Your seed is stored locally in the extension and used to sign payment transactions.
+        </p>
+      </div>
+
+      <div class="error-msg" id="import-error"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-import-back">&larr; Back</button>
+        <button class="btn btn-primary" id="btn-import-submit">Import Wallet &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 2b: Generate Wallet
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-generate">
+      <h2>Your New Wallet</h2>
+
+      <div class="warning">
+        Save your seed phrase securely. You cannot recover it later.
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <div class="field-label">Address</div>
+          <div class="field-value">
+            <span class="text" id="gen-address">&mdash;</span>
+            <button class="copy-btn" id="btn-copy-address">Copy</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">Seed</div>
+          <div class="field-value">
+            <span class="text" id="gen-seed" style="-webkit-text-security: disc;">&mdash;</span>
+            <button class="btn btn-sm btn-ghost" id="btn-toggle-gen-vis">Show</button>
+            <button class="copy-btn" id="btn-copy-seed">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <details>
+        <summary>How to get RLUSD for testing</summary>
+        <div class="details-body">
+          <ol class="steps-list">
+            <li>Download the <a href="https://crossmark.io" target="_blank">Crossmark wallet</a> browser extension</li>
+            <li>Import this seed into Crossmark (select <strong>Testnet</strong>)</li>
+            <li>Go to <a href="https://tryrlusd.com" target="_blank">tryrlusd.com</a> and connect Crossmark</li>
+            <li>Click <strong>"Enable Trustline"</strong> in the Crossmark popup</li>
+            <li>Claim RLUSD tokens from tryrlusd.com</li>
+          </ol>
+        </div>
+      </details>
+
+      <div class="error-msg" id="generate-error"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-generate-back">&larr; Back</button>
+        <button class="btn btn-primary" id="btn-seed-saved">I've Saved My Seed &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 2: All set!
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-ready">
+      <div style="text-align:center;">
+        <div style="font-size:44px; margin-bottom:6px; color:#22cc88;">&#10003;</div>
+        <h1>You're All Set!</h1>
+        <p class="subtitle" style="margin-top:8px;">
+          Your StreamPay wallet is ready. Start watching and pay per second.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="summary-row">
+          <span class="summary-label">Wallet</span>
+          <span class="summary-value blue" id="ready-address"
+                style="font-size:11px; word-break:break-all; text-align:right; max-width:300px;">&mdash;</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">RLUSD</span>
+          <span class="summary-value green" id="ready-rlusd">&mdash;</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">XRP</span>
+          <span class="summary-value" style="color:#e0e0f0;" id="ready-xrp">&mdash;</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Trustline</span>
+          <span class="summary-value green" id="ready-trustline">&mdash;</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btn-start-youtube"
+              style="font-size:15px; padding:14px;">
+        Start Watching on YouTube
+      </button>
+      <button class="btn btn-ghost btn-block" id="btn-start-prime">
+        Watch on Prime Video
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <p class="loading-label" id="loading-text">Working...</p>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="onboarding/onboarding.js" type="module"></script>
+</body>
+</html>

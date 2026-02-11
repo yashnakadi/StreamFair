@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.db
+*.db-wal
+*.db-shm
+.env
+.DS_Store
+*-wallets.json
+create_wallets/wallets.json
+.claude/settings.local.json
+*.js.map

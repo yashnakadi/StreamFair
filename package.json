@@ -1,0 +1,16 @@
+{
+  "name": "streamfair",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "extension"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "build:extension": "npm run build --workspace=extension"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2"
+  }
+}
